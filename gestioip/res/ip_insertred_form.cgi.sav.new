@@ -1,0 +1,444 @@
+#!/usr/bin/perl -T -w
+
+# Copyright (C) 2011 Marc Uebel
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+use strict;
+use DBI;
+use lib '../modules';
+use GestioIP;
+
+my $daten=<STDIN>;
+my $gip = GestioIP -> new();
+my %daten=$gip->preparer($daten);
+
+my $server_proto=$gip->get_server_proto();
+
+my $lang = $daten{'lang'} || "";
+my ($lang_vars,$vars_file)=$gip->get_lang("","$lang");
+
+my $base_uri = $gip->get_base_uri();
+
+my $client_id = $daten{'client_id'} || $gip->get_first_client_id();
+
+my @values_locations=$gip->get_loc("$client_id");
+my @values_cat_red=$gip->get_cat_net("$client_id");
+
+
+$gip->print_init("$$lang_vars{crear_red_message}","$$lang_vars{crear_red_message}","$$lang_vars{crear_red_message}","$vars_file","$client_id");
+
+if ( ! $values_locations[0] ) {
+	my $client_name=$gip->get_client_from_id("$client_id");
+        $gip->print_error("$client_id","$$lang_vars{no_location_defined_message} <i>$client_name</i> <br><p><form name=\"search_red\" method=\"POST\" action=\"$server_proto://$base_uri/res/ip_admin.cgi\" style=\"display:inline\"><input type=\"hidden\" name=\"client_id\" value=\"$client_id\"><input type=\"submit\" class=\"input_link_w_net\" value=\"$$lang_vars{loc_cat_message}\" name=\"B1\"></form>");
+}
+
+my $red_dat=$daten{ip};
+my $ip_version = "v4";
+if ( $red_dat ) {
+	$ip_version=$daten{'ip_version'};
+	if ( $ip_version eq "v4" ) {
+		$gip->print_error("$client_id","$$lang_vars{formato_malo_message}: $red_dat") if $red_dat !~ /^\d{6,15}\/\d{1,20}$/;
+	} else {
+		$gip->print_error("$client_id","$$lang_vars{formato_malo_message}: $red_dat") if $red_dat !~ /^\d{6,40}\/\d{1,40}$/;
+#		my $valid_v6 = $gip->check_valid_ipv6("$red") || "0";
+#		$gip->print_error("$client_id","NO VALID IPv6 ADDRESS <b>$red</b>") if $valid_v6 != "1";
+	}
+}
+
+print <<EOF;
+
+EOF
+
+
+my %anz_hosts_bm = $gip->get_anz_hosts_bm_hash("$client_id","v4");
+my $BM_freerange = "8";
+my ($ip_freerange,$anz_possible_nets,$ip_int_freerange,$anz_hosts_freerange);
+my %possible_nets;
+
+if ( $red_dat ) {
+	if ( $ip_version eq "v4" ) {
+		$red_dat =~ /^(\d{6,15})\/(\d{1,20})$/;
+	} else {
+		$red_dat =~ /^(\d{6,40})\/(\d{1,40})$/;
+	}
+	$ip_int_freerange = $1;
+	$anz_hosts_freerange = $2;
+	$ip_freerange = $gip->int_to_ip("$client_id","$ip_int_freerange","$ip_version");
+	$BM_freerange = $gip->find_smallest_valid_BM("$client_id","$ip_freerange","$ip_version");
+	my $anz_host_freerange_part;
+	foreach my $key (sort {$a <=> $b} keys %anz_hosts_bm ) {
+		my $anz_host_freerange_key = $anz_hosts_bm{$key};
+		if ( $anz_hosts_freerange <= $anz_host_freerange_key ) {
+			$anz_host_freerange_part = $anz_host_freerange_key;
+			$BM_freerange = $key if $BM_freerange < $key;
+			$anz_possible_nets=$anz_hosts_freerange / $anz_host_freerange_part;
+			$anz_possible_nets++;
+		}
+		$possible_nets{$key} = $anz_hosts_freerange / $anz_host_freerange_key;
+		$possible_nets{$key} =~ s/\..*//;
+	}
+}
+
+
+
+print <<EOF;
+
+<script type="text/javascript">
+<!--
+function checkRefresh() {
+      document.forms.insertred_form.ip_version[1].checked=true
+      document.forms.insertred_form.BM.options[18].selected=true
+}
+-->
+</script>
+
+
+<script language="JavaScript" type="text/javascript" charset="utf-8">
+<!--
+function calculate_red()
+{
+var IP=document.insertred_form.red.value;
+var BM=document.insertred_form.BM.value;
+var opciones="toolbar=no,scrollbars=1,right=100,top=100,width=475,height=550,resizable", i=0;
+var URL="$server_proto://$base_uri/ip_calculatered.cgi?ip=" + IP + "&BM=" + BM; 
+host_info=window.open(URL,"",opciones);
+}
+-->
+</script>
+
+
+<script language="JavaScript" type="text/javascript" charset="utf-8">
+<!--
+function change_BM_select(version){
+   var values_v4=new Array("CLASS A","255.0.0.0 - 16.777.214 hosts","255.128.0.0 - 8.388.606 hosts","255.192.0.0 - 4.194.302 hosts","255.224.0.0 - 2.097.150 hosts","255.240.0.0 - 1.048.574 hosts","255.248.0.0 - 524.286 hosts","255.252.0.0 - 262.142 hosts","255.254.0.0 - 131.070 hosts","CLASS B","255.255.0.0 - 65.534 hosts","255.255.128.0 - 32766 hosts","255.255.192.0 - 16.382 hosts","255.255.224.0 - 8.190 hosts","255.255.240.0 - 4.094 hosts","255.255.248.0 - 2.046 hosts","255.255.252.0 - 1.022 hosts","255.255.254.0 - 510 hosts","CLASS C","255.255.255.0 - 254 hosts","255.255.255.128 - 126 hosts","255.255.255.192 - 62 hosts","255.255.255.224 - 30 hosts","255.255.255.240 - 14 hosts","255.255.255.248 - 6 hosts","255.255.255.252 - 2 hosts","255.255.255.254 - 0 hosts","255.255.255.255 - 0 hosts")
+    if (version == 'v4') {
+       num_values = 28
+       document.insertred_form.BM.length = num_values
+       j=8
+       for(i=0;i<num_values;i++){
+          if ( i == '0' )
+          {
+             document.insertred_form.BM.options[i].text=values_v4[i]
+             document.insertred_form.BM.options[i].disabled=true
+          }
+          else if ( i == '9' )
+                   { 
+             document.insertred_form.BM.options[i].text=values_v4[i]
+             document.insertred_form.BM.options[i].disabled=true
+                   } 
+          else if ( i == '18' )
+                   {
+             document.insertred_form.BM.options[i].text=values_v4[i]
+             document.insertred_form.BM.options[i].disabled=true
+                   } 
+          else {
+            document.insertred_form.BM.options[i].text=j + ' (' + values_v4[i] + ')'
+            document.insertred_form.BM.options[i].value=j
+            document.insertred_form.BM.options[i].disabled=false
+	    j++
+          }
+          if ( i == '19' ) { 
+             document.insertred_form.BM.options[i].selected = true
+          }
+       }
+	document.getElementById('example_network_message').innerHTML = '<i>$$lang_vars{example_network_message}</i>';
+    }else{
+       var values_v6=new Array("118 (1024)","119 (512)","120 (256)","121 (128)","122 (64)","123 (32)","124 (16)","125 (8)","126 (4)","127 (0)","128 (0)")
+       num_values = '129'
+       document.insertred_form.BM.length = num_values
+       j=1
+       for(i=0;i<128;i++){
+          document.insertred_form.BM.options[i].value=j
+          document.insertred_form.BM.options[i].text=j + ' (' + values_v6[i] + ')'
+          document.insertred_form.BM.options[63].selected = true
+          j++
+       }
+	document.getElementById('example_network_message').innerHTML = '<i>$$lang_vars{example_network_v6_message}</i>';
+    }
+}
+-->
+</script>
+
+EOF
+
+
+print "<p>\n";
+print "<b>$$lang_vars{create_one_network_message}<b>\n";
+print "<form name=\"insertred_form\" method=\"POST\" action=\"$server_proto://$base_uri/res/ip_insertred.cgi\"><br>\n";
+print "<table border=\"0\" cellpadding=\"5\" cellspacing=\"2\">\n";
+if ( $ip_version eq "v4" ) {
+	print "<tr><td></td><td>IPv4<input type=\"radio\" name=\"ip_version\" value=\"v4\" onchange=\"change_BM_select('v4'); document.insertred_form.red.size='15';  document.insertred_form.red.maxLength='15';\" checked> IPv6<input type=\"radio\" name=\"ip_version\" value=\"v6\" onchange=\"change_BM_select('v6'); document.insertred_form.red.size='40'; document.insertred_form.red.maxLength='40'\"></td></tr>\n";
+} else {
+print "TEST<br>\n";
+	print "<tr><td></td><td>IPv4<input type=\"radio\" name=\"ip_version\" value=\"v4\" onchange=\"change_BM_select('v4'); document.insertred_form.red.size='15';  document.insertred_form.red.maxLength='15';\"> IPv6<input type=\"radio\" name=\"ip_version\" value=\"v6\" onchange=\"change_BM_select('v6'); document.insertred_form.red.size='40'; document.insertred_form.red.maxLength='40'\" checked></td></tr>\n";
+}
+if ( $red_dat ) {
+	print "<tr><td align=\"right\">$$lang_vars{redes_message}</td><td><input name=\"red\" id=\"red\" type=\"text\" size=\"15\" maxlength=\"15\" value=\"$ip_freerange\"></td></tr>\n";
+} else {
+	print "<tr><td align=\"right\">$$lang_vars{redes_message}</td><td><input name=\"red\" id=\"red\" type=\"text\" size=\"15\" maxlength=\"15\"> <span id=\"example_network_message\"><i>$$lang_vars{example_network_message}</i></span></td></tr>\n";
+}
+print "<tr><td align=\"right\">$$lang_vars{BM_message}</td><td><select name=\"BM\" id=\"BM\" size=\"1\">\n";
+my $bm_i_message;
+if ( $ip_version eq "v4" ) {
+	for (my $i = 8; $i < 33; $i++) {
+		next if $i == 31;
+		print "<option disabled>CLASS A</option>" if $i == "8" && $i >= $BM_freerange;
+		print "<option disabled>CLASS B</option>" if $i == "16" && $i >= $BM_freerange;
+		print "<option disabled>CLASS C</option>" if $i == "24";
+
+		if ( $i =~ /^\d$/ ) {
+			$bm_i_message = "bm_0" . $i . "_message";
+		} else {
+			$bm_i_message = "bm_" . $i . "_message";
+		}
+		if ( ! $red_dat ) {
+			if ( $i eq "24") {
+				print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			} else {
+				print "<option value=\"$i\">$i&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			}
+		} else {
+			next if $i < $BM_freerange;
+			if ( $i == "24" ) {
+				print "<option selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			} elsif ( $i eq "$BM_freerange" && $BM_freerange > "24") {
+				print "<option selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			} else {
+				print "<option>$i&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			}
+		}
+	}
+} else {
+	for (my $i = 64; $i < 128; $i++) {
+		if ( ! $red_dat ) {
+			if ( $i eq "120") {
+				print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;(TEST 1)</option>";
+			} else {
+				print "<option value=\"$i\">$i&nbsp;&nbsp;&nbsp;&nbsp;(TEST 2)</option>";
+			}
+		} else {
+			next if $i < $BM_freerange;
+			if ( $i == "120" ) {
+				print "<option selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;(TEST 3)</option>";
+			} elsif ( $i eq "$BM_freerange" && $BM_freerange > "120") {
+				print "<option selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;(TEST 4)</option>";
+			} else {
+				print "<option>$i&nbsp;&nbsp;&nbsp;&nbsp;(TEST 4)</option>";
+			}
+		}
+	}
+}
+print "</select></td></tr>\n";
+print "<tr><td align=\"right\">$$lang_vars{description_message}</td><td><input name=\"descr\" type=\"text\"  size=\"30\" maxlength=\"100\"></td></tr>\n";
+print "<tr><td align=\"right\">$$lang_vars{comentario_message}</td><td><input name=\"comentario\" type=\"text\"  size=\"30\" maxlength=\"500\"></td></tr>\n";
+print "<tr><td align=\"right\">$$lang_vars{loc_message}</td><td><select name=\"loc\" size=\"1\">";
+print "<option></option>";
+my $j=0;
+foreach (@values_locations) {
+        print "<option>$values_locations[$j]->[0]</option>" if ( $values_locations[$j]->[0] ne "NULL" );
+        $j++;
+}
+print "</select></td></tr>\n";
+
+print "<tr><td align=\"right\">$$lang_vars{cat_message}</td><td><select name=\"cat_red\" size=\"1\">";
+print "<option></option>";
+$j=0;
+foreach (@values_cat_red) {
+        print "<option>$values_cat_red[$j]->[0]</option>" if ( $values_cat_red[$j]->[0] ne "NULL" );
+        $j++;
+}
+print "</select><p></td></tr>\n";
+
+print "<tr><td align=\"right\">$$lang_vars{mark_sync_message}</td><td><input type=\"checkbox\" name=\"vigilada\" value=\"y\"><input type=\"hidden\" name=\"add_type\" value=\"single\"><input type=\"hidden\" name=\"client_id\" value=\"$client_id\"><br></td></tr>\n ";
+print "<tr><td align=\"right\"><p><br><input type=\"submit\" value=\"$$lang_vars{create_message}\" name=\"B2\" class=\"input_link_w\"></td>\n";
+print "<td valign=\"middle\"><span class=\"mostrar_link\" onClick=\"calculate_red()\" style=\"cursor:pointer;\" title=\"$$lang_vars{what_would_happen_message}\"><br>&nbsp;&nbsp;$$lang_vars{calcular_message}</span></td></tr>\n";
+print "</table></form>\n";
+
+
+print <<EOF;
+<script language="JavaScript" type="text/javascript" charset="utf-8">
+<!--
+function calculate_same_BM()
+{
+var IP=document.insertred_same_bm_form.red.value;
+var BM=document.insertred_same_bm_form.BM.value;
+var ANZ=document.insertred_same_bm_form.anz_BM.value;
+var CLIENT_ID=$client_id;
+var opciones="toolbar=no,scrollbars=1,right=100,top=100,width=500,height=300", i=0;
+var URL="$server_proto://$base_uri/res/ip_insertred_calculate.cgi?ip=" + IP + "&BM=" + BM + "&anz_BM=" + ANZ + "&client_id=" + CLIENT_ID
+host_info=window.open(URL,"",opciones);
+}
+-->
+</script>
+EOF
+
+
+
+print "<p><br>\n";
+print "<b>$$lang_vars{create_multiple_network_same_BM_message}";
+print "</b>\n";
+print "<form name=\"insertred_same_bm_form\" method=\"POST\" action=\"$server_proto://$base_uri/res/ip_insertred_check.cgi\"><br>\n";
+print "<table border=\"0\" cellpadding=\"5\" cellspacing=\"2\">\n";
+if ( $red_dat ) {
+        print "<tr><td align=\"right\">$$lang_vars{redes_primero_message}</td><td><input name=\"red\" type=\"text\" size=\"15\" maxlength=\"15\" value=\"$ip_freerange\"></td></tr>\n";
+} else {
+        print "<tr><td align=\"right\">$$lang_vars{redes_primero_message}</td><td><input name=\"red\" type=\"text\" size=\"15\" maxlength=\"15\">  <i>$$lang_vars{example_network_message}</i></td></tr>\n";
+}
+print "<tr><td align=\"right\">$$lang_vars{BM_message}</td><td><select name=\"BM\" size=\"1\">\n";
+my $max_redes = 50;
+for (my $i = 8; $i < 33; $i++) {
+	next if $i == 31;
+	print "<option disabled>CLASS A</option>" if $i == "8" && $i >= $BM_freerange;
+	print "<option disabled>CLASS B</option>" if $i == "16" && $i > $BM_freerange;
+	print "<option disabled>CLASS C</option>" if $i == "24";
+        if ( $i =~ /^\d$/ ) {
+                $bm_i_message = "bm_0" . $i . "_message";
+        } else {
+                $bm_i_message = "bm_" . $i . "_message";
+        }
+        if ( ! $red_dat ) {
+                if ( $i eq "24") {
+                        print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+                } else {
+                        print "<option value=\"$i\">$i&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+                }
+        } else {
+		next if $i < $BM_freerange;
+		$max_redes = $possible_nets{$i};
+		
+		if ( $max_redes < "50" ) {
+
+			if ( $i == "24" ) {
+				if ( $max_redes == "1" ) {
+					print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message}) - $max_redes $$lang_vars{max_red_message}</option>";
+				} else {
+					print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message}) - $max_redes $$lang_vars{max_redes_message}</option>";
+				}
+			} elsif ( $i eq "$BM_freerange" && $BM_freerange > "24") {
+				if ( $max_redes == "1" ) {
+					print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message}) - $max_redes $$lang_vars{max_red_message}</option>";
+				} else {
+					print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message}) - $max_redes $$lang_vars{max_redes_message}</option>";
+				}
+			} else {
+				if ( $max_redes == "1" ) {
+					print "<option value=\"$i\">$i&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message}) - $max_redes $$lang_vars{max_red_message}</option>";
+				} else {
+					print "<option value=\"$i\">$i&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message}) - $max_redes $$lang_vars{max_redes_message}</option>";
+				}
+			}
+		} else {
+			if ( $i == "24" ) {
+				print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			} elsif ( $i eq "$BM_freerange" && $BM_freerange > "24") {
+				print "<option value=\"$i\" selected><b>$i</b>&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			} else {
+				print "<option value=\"$i\">$i&nbsp;&nbsp;&nbsp;&nbsp;($$lang_vars{$bm_i_message})</option>";
+			}
+		}
+        }
+}
+print "</select></td></tr>\n";
+print "<tr><td align=\"right\">$$lang_vars{anz_new_networks_message}</td><td><select name=\"anz_BM\" size=\"1\">";
+$max_redes = 50 if $max_redes >= 50;
+for (my $i = 1; $i <= $max_redes; $i++) {
+        print "<option>$i</option>";
+}
+print "</select></td></tr>\n";
+print "<tr><td align=\"right\">$$lang_vars{loc_message}</td><td><select name=\"loc\" size=\"1\">";
+print "<option></option>";
+$j=0;
+foreach (@values_locations) {
+        print "<option>$values_locations[$j]->[0]</option>" if ( $values_locations[$j]->[0] ne "NULL" );
+        $j++;
+}
+print "</select></td></tr>\n";
+
+print "<tr><td align=\"right\">$$lang_vars{cat_message}</td><td><select name=\"cat_red\" size=\"1\">";
+print "<option></option>";
+$j=0;
+foreach (@values_cat_red) {
+        print "<option>$values_cat_red[$j]->[0]</option>" if ( $values_cat_red[$j]->[0] ne "NULL" );
+        $j++;
+}
+print "</select><p></td></tr>\n";
+
+print "<tr><td align=\"right\">$$lang_vars{mark_sync_message}</td><td><input type=\"checkbox\" name=\"vigilada\" value=\"y\"><input type=\"hidden\" name=\"add_type\" value=\"multiple_same_bm\"><input type=\"hidden\" name=\"client_id\" value=\"$client_id\"><br></td></tr>\n ";
+print "<tr><td align=\"right\" valign=\"middle\"><p><br><input type=\"submit\" value=\"$$lang_vars{create_message}\" name=\"B2\" class=\"input_link_w\"></td>";
+print "<td valign=\"middle\"><span class=\"mostrar_link\" onClick=\"calculate_same_BM()\" style=\"cursor:pointer;\" title=\"$$lang_vars{what_would_happen_message}\"><br>&nbsp;&nbsp;$$lang_vars{calcular_message}</span></td></tr>\n";
+print "</table></form>\n";
+
+
+
+
+print <<EOF;
+<script language="JavaScript" type="text/javascript" charset="utf-8">
+<!--
+function calculate_different_BM()
+{
+var IP=document.insertred_different_bm_form.red.value;
+var bitmasks=document.insertred_different_bm_form.bitmasks.value;
+var BM_freerange=$BM_freerange;
+var CLIENT_ID=$client_id;
+var opciones="toolbar=no,scrollbars=1,right=100,top=100,width=500,height=300", i=0;
+var URL="$server_proto://$base_uri/res/ip_insertred_calculate.cgi?ip=" + IP + "&bitmasks=" + bitmasks + "&BM_freerange=" + BM_freerange  + "&client_id=" + CLIENT_ID;
+host_info=window.open(URL,"",opciones);
+}
+-->
+</script>
+EOF
+
+
+print "<p><br>\n";
+print "<b>$$lang_vars{create_multiple_network_differen_BM_message}";
+print "</b>\n";
+print "<form name=\"insertred_different_bm_form\" method=\"POST\" action=\"$server_proto://$base_uri/res/ip_insertred_check.cgi\"><br>\n";
+print "<table border=\"0\" cellpadding=\"5\" cellspacing=\"2\">\n";
+if ( $red_dat ) {
+        print "<tr><td align=\"right\">$$lang_vars{redes_primero_message}</td><td><input name=\"red\" type=\"text\" size=\"15\" maxlength=\"15\" value=\"$ip_freerange\"></td></tr>\n";
+} else {
+        print "<tr><td align=\"right\">$$lang_vars{redes_primero_message}</td><td><input name=\"red\" type=\"text\" size=\"15\" maxlength=\"15\">  <i>$$lang_vars{example_network_message}</i></td></tr>\n";
+}
+print "<tr><td align=\"right\">$$lang_vars{bitmasks_message}</td><td><input name=\"bitmasks\" type=\"text\" size=\"15\" maxlength=\"200\"> $$lang_vars{bitmasks_format_message}</td></tr>\n";
+print "<tr><td align=\"right\">$$lang_vars{loc_message}</td><td><select name=\"loc\" size=\"1\">";
+print "<option></option>";
+$j=0;
+foreach (@values_locations) {
+        print "<option>$values_locations[$j]->[0]</option>" if ( $values_locations[$j]->[0] ne "NULL" );
+        $j++;
+}
+print "</select></td></tr>\n";
+
+print "<tr><td align=\"right\">$$lang_vars{cat_message}</td><td><select name=\"cat_red\" size=\"1\">";
+print "<option></option>";
+$j=0;
+foreach (@values_cat_red) {
+        print "<option>$values_cat_red[$j]->[0]</option>" if ( $values_cat_red[$j]->[0] ne "NULL" );
+        $j++;
+}
+print "</select><p></td></tr>\n";
+
+print "<tr><td align=\"right\">$$lang_vars{mark_sync_message}</td><td><input type=\"checkbox\" name=\"vigilada\" value=\"y\"><input type=\"hidden\" name=\"add_type\" value=\"multiple_different_bm\"><input type=\"hidden\" name=\"client_id\" value=\"$client_id\"><br></td></tr>\n ";
+print "<tr><td align=\"right\"><p><br><input type=\"submit\" value=\"$$lang_vars{create_message}\" name=\"B2\" class=\"input_link_w\"></form></td>";
+print "<td valign=\"middle\"><span class=\"mostrar_link\" onClick=\"calculate_different_BM()\" style=\"cursor:pointer;\" title=\"$$lang_vars{what_would_happen_message}\"><br>&nbsp;&nbsp;$$lang_vars{calcular_message}</span></td></tr>\n";
+print "</table>\n";
+
+
+print "<script type=\"text/javascript\">\n";
+ print "document.insertred_form.red.focus();\n";
+print "</script>\n";
+
+$gip->print_end("$client_id","$vars_file");

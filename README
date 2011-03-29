@@ -1,0 +1,68 @@
+
+GestioIP 2.2 IPAM README
+========================
+
+GestioIP is a web based IP address management (IPAM) tool.
+It's designed to quickly find the information that administrators
+frequently need. GestioIP features a front page with integrated search
+and filter functions for both networks and hosts. This lets you find
+information easily and quickly.
+
+GestioIP can be useful to find information like:
+
+    * The networks of the production environment
+    * The networks in datacenter X
+    * The networks which ID contains "172"
+    * The networks which description contains "backup"
+    * All addresses/free or used addresses of network A.B.C.D
+
+    * The IP address of the switch in the 3. floor of site Y
+    * The IP address of the TFTP server in the pre-production
+    * All IP addresses of router xy and to which networks they are
+      connected
+    * Where the management tool for firewall xy installed is
+
+
+The main features of GestioIP 2.2 are:
+
+    * Easy usage and clear presentation of data
+    * Powerful quick-search for both network and host directly accessible from
+      every page, permitting Internet Search Engine equivalent expressions like
+      "exact match" or -string_to_ignore
+    * Possibility to independently manage the address ranges for different clients
+    * An incorporated VLAN management system
+    * Network and VLAN discovery via SNMP
+    * Host discovery via SNMP and DNS
+    * Shows host status
+    * One-click-check if an IP address answers to ping and if DNS A y PTR entries
+      are correctly configured
+    * Split/join/scaling up/scaling down networks (host entries can be maintained)
+    * Shows free network ranges
+    * Integrated subnet calculator
+    * Customizable columns for networks and hosts
+    * Reservation of IP ranges for special usage (e.g. DHCP)
+    * Web form to migrate easily from spreadsheet (.xls - MS Excel) based IP address management to GestioIP IPAM
+    * Web form to import networks from SNMP enabled devices
+    * Web form to export networks or host to CSV files
+    * Automatic update of the networks via SNMP
+    * Automatic update of the networks against DNS
+    * Automatic update of the networks against OCS Inventory NG
+    * Statistics
+    * Full auditable
+    * Easy, script-based installation
+    * Well documented
+    * Multilingual (English, Spanish, Italian, Catalan, German)
+    * Full IPv4 support (IPv6 integration planed for 2011)
+
+
+
+See INSTALL for installation instructions
+
+
+Documentation:
+http://www.gestioip.net/documentation_gestioip_en.html
+
+
+
+---
+GestioIP Copyright (C) 2011 Marc Uebel <contact@gestioip.net>

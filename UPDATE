@@ -1,0 +1,73 @@
+
+GestioIP 2.2 IPAM
+IP address management software
+
+
+UPDATE FROM GestioIP IPAM 2.2.x
+==========================
+
+GestioIP 2.2.8 requires additional Perl Modules (Net::DNS and
+and SNMP::INFO). Update script offers the option to install
+the modules automatically with the Linux distribution specific
+packet managers (yum, zypper, apt-get) in the case they are available.
+If the packages are not available, update offers the possibility
+to automatically download (from CPAN) and install the missing Modules.
+That requires wget and make to be installed during the update.
+
+VLAN discovery and parts of host discovery are partly based 
+on the Perl Module SNMP::INFO. This requires that Netdisco's MIB
+files are installed on the system. Setup offers the option to
+automatically download and install required MIB files.
+
+
+IMPORTANT NOTE
+Script for automatic actualization of old version are not compatible
+with v2.2.8. Disable all cronjobs for automatic actualization
+before updating to v2.2.8. You will find the new scripts for 
+automatic actualization in /usr/share/gestioip/bin and configuration
+for automatic actualization in /usr/share/gestioip/etc. You need to
+update crontab manually with the new scripts.
+
+
+* Download GestioIP 2.2.8 IPAM from www.gestioip.net
+
+
+* Open a shell and untar file gestioip_2.2.8.tar.gz:
+
+    $ tar vzxf gestioip_2.2.8.tar.gz
+
+
+* Change to gestioip_2.2.y/update
+
+    $ cd gestioip_2.2.8
+
+
+* run update_gestioip.sh like root:
+
+    sudo ./update_gestioip.sh
+
+  and follow the instructions
+
+
+
+NOTE
+System to reserve ranges for special usage
+has been redesigned. This causes that reserved
+ranges will be dropped while updating from
+version 2.2.5
+
+NOTE
+If you chose to install Perl Modules manually dont't
+forget to install Netdisco's MIBs. Download them from
+Sourceforge and copy the content of the directory
+netdisco-mibs-0.7/ to /usr/share/gestioip/mibs/
+
+NOTE for Fedora/Redhat/CentOS
+Default SELinux setting impede the execution of GestioIP. Update script
+offers the option to update SELinux policy automatically.
+See online documentation page for details.
+
+
+
+---
+GestioIP Copyright (C) 2011 Marc Uebel <contact@gestioip.net>

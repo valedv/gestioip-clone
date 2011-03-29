@@ -1,0 +1,65 @@
+
+GestioIP 2.2 IPAM
+IP address management software
+
+
+UPGRADE FROM GestioIP 2.1.x
+==========================
+
+* Make a backup of the gestioip database
+
+   $ mysqldump -u gestioip -p gestioip > gestioip.sql
+
+
+* Delete database "gestioip"
+
+   access to mysql's commandline interface
+
+   $ mysql -u gestioip -p
+
+   delete database "gestioip"
+
+   mysql> drop database gestioip;
+   mysql> exit
+
+
+* Install version 2.2.4
+
+  download GestioIP version 2.2.4 from www.gestioip.net/old_releases/gestioip_2.2.4.tar.gz
+
+  $ wget http://www.gestioip.net/old_releases/gestioip_2.2.4.tar.gz
+
+  and install it (see INSTALL)
+
+
+* Import the backup of the old database into the new database
+
+   $ mysql -u gestioip -p gestioip < gestioip.sql
+
+
+* Update version 2.2.4 to actual version 2.2.8
+
+  download actual version 2.2.8
+
+  $ wget http://sourceforge.net/projects/gestioip/files/gestioip/gestioip_2.2.8.tar.gz/download
+
+
+  untar gestioip_2.2.8.tar.gz and change to gestioip_2.2.8/update
+
+
+  run update_gestioip.sh like root:
+
+  $ sudo ./update_gestioip.sh
+
+  and follow the instructions
+
+  See UPDATE for details
+
+
+
+The new URL to access to GestioIP is http://servername/gestioip
+
+
+
+---
+GestioIP Copyright (C) 2011 Marc Uebel <contact@gestioip.net>

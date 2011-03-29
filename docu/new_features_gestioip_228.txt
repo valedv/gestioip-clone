@@ -1,0 +1,75 @@
+This is a provisional short info about new features of GestioIP v2.2.8
+
+Official documentation will be published as soon as possible
+
+Barcelona, 13/01/2011
+
+
+
+
+(1) DISCOVERY
+
+Network discovery is convinced to explore the network infrastructure using SNMP and DNS and to import the found information into GestioIP's database
+
+It executes the following processes:
+
+1 VLAN discovery via SNMP using Perl Modul SNMP::Info
+2 Network discovery via SNMP querying routing tables from network devices
+3 Host discovery of new found networks via SNMP using SNMP::Info and own discovery mechanisms
+4 Host discovery of new found networks via DNS
+
+Please read Quick Start Guide before executing discovery.
+
+
+(2) VLAN MANAGEMENT
+
+The VLAN management gives an overview of existing VLANs and disposes of an automatic VLAN discovery mechanism.
+
+Vlan discovery
+To access VLAN importation form go to "import/export" -> "import VLANs via SNMP".
+
+node: introduce here an IP address of a device with VLAN information
+layer II devices: To import VLANs form devices classified with host type "L2 device"
+layer III devices: To import VLANs from devices classified with host type "L3 device"
+
+NOTE
+If you doesn't have devices classified with host type L2 or L3 device there appear the note "No layer II devices defined"
+To change the host type of a device go to "show networks", access to the corresponding network and click device "edit host" button.
+
+NOTE
+Column "switches" of VLAN overview will only be updated when discovery is lanced against a device from Layer II or Layer III devices select box.
+
+
+The VLAN menu offers the following functions
+
+* show - to access VLAN overview
+* new - to create new VLANs manually
+* unify - VLAN names are configured manually by network administrators. This may cause that the same VLAN appears in different devices with different names (e.g. VLAN 1 may have name "DEFAULT" on one device and "default_vlan" on another). "Unify" is intended to associate this kind of VLANs so that the appear like one in GestioIPs VLAN overview
+* show/new vlan provider - You may have contracted VLANs with different Internet Providers. You can specify them here.
+
+
+(3) COLUMNS
+
+You can now define new columns which will shown in network or host list view.
+There are two types of columns: Predefined and custom columns.
+Predefined columns will be updated by SNMP discovery mechanisms, custom columns not.
+
+Go to "manage" -> "custom columns" to define new columns.
+
+NOTE
+Predefined network column "VLAN" will not be updated by VLAN discovery.
+
+
+(4) CLIENTS
+
+With clients feature it's possible to manage different address ranges completely independently. 
+
+Go to "manage" -> "clients" to show, add, edit or delete clients.
+
+
+
+
+=================================================
+GestioIP Copyright (C) Marc Uebel 2011 <contact@gestioip.net>
+
+

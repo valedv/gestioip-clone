@@ -1,0 +1,78 @@
+
+GestioIP 2.2 IPAM
+IP address management software
+
+
+INSTALLATION GestioIP 2.2
+=========================
+
+
+GestioIP is a web based IP network and IP address
+management (IPAM) tool. See the README file for more details.
+
+
+Requirements
+============
+
+Apache2 with mod_perl, Mysql5.x, Perl, some Perl modules
+
+
+Installation
+=============
+
+The installation of GestioIP consists of two parts.
+A command line part to install the required perl modules
+and to configure the apache web server and a web-based
+part to create and configure the mysql database.
+
+If there are Perl Modules missing Setup will offer the
+option to install them automatically with the Linux distribution
+specific packet managers (yum, zypper, apt-get). But there are not
+all Perl Modules like packages for all distributions available.
+Setup offers the possibility to automatically download (from CPAN)
+and intall the missing Modules. That requires wget and make to be
+installed during the installation.
+
+VLAN discovery and parts of host discovery are partly based 
+on the Perl Module SNMP::INFO. This requires that Netdisco's MIB
+files are installed on the system. Setup offers the option to
+automatically download and install requiered MIB files.
+
+Note for Fedora/Redhat/CentOS
+Default SELinux setting impede to execute web based part of installation
+and the execution of GestioIP. Setup offers the option to update SELinux
+policy automatically. See online documentation page for details.
+
+
+* Download GestioIP 2.2.8 IPAM from www.gestioip.net
+
+
+Install GestioIP
+
+* Open a shell and untar file gestioip_2.2.8.tar.gz:
+
+    $ tar vzxf gestioip_2.2.8.tar.gz
+
+* Change to the new directory gestioip_2.2.8
+
+    $ cd gestioip_2.2.8
+
+* Execute setup_gestioip.sh like root
+
+    $ sudo ./setup_gestioip.sh
+
+    and follow the instructions
+
+
+* restart your apache web server
+
+* access to web based database configuration
+  http://servername/gestioip/install
+
+  (replace "servername" with the IP address or the
+  DNS name of the Web server)
+
+
+
+====================================================
+GestioIP Copyright (C) 2011 Marc Uebel <contact@gestioip.net>

@@ -1,0 +1,102 @@
+
+GestioIP 2.2.8 IPAM
+Open source IP address management software
+
+
++++++++++++++++++++++++++
++++ Quick Start Guide +++
++++++++++++++++++++++++++
+
+
+* Download GestioIP 2.2.8 IPAM from www.gestioip.net
+
+
+New installation 
+----------------
+
+  - Open a shell and untar gestioip_2.2.8.tar.gz:
+
+    $ tar vzxf gestioip_2.2.8.tar.gz
+
+  - Change to the new directory gestioip_2.2.8
+
+  - Execute setup_gestioip.sh like root
+
+    $ sudo ./setup_gestioip.sh
+
+    and follow the instructions
+
+
+    see INSTALL for more details
+
+
+Update from version >= 2.2.4 (see UPGRADE for older versions)
+---------------------------
+
+  - Open a shell and untar gestioip_2.2.8.tar.gz:
+
+    $ tar vzxf gestioip_2.2.8.tar.gz
+
+  - Change to the new directory gestioip_2.2.8/update
+
+  - Execute update_gestioip.sh like root
+
+    $ sudo ./update_gestioip.sh
+
+    and follow the instructions
+
+
+    see UPDATE for more details
+
+
+
+
+Customize GestioIP
+------------------
+
+* Customize columns for network and host list views
+
+  Click "manage" -> "columns" and add predefined columns or define own columns
+
+  NOTE
+  Predefined host columns will be updated by "discovery" and "update via SNMP"
+  Tryout columns "vendor" and "OS". GestioIP recognizes more than 80 different manufactures.
+
+
+Initialize GestioIP's database
+------------------------------
+
+* If you migrate from spreadsheet based IP address management import spreadsheets first:
+  
+  - Click "import/export" ->  "import networks form spreadsheet", upload
+    spreadsheet with networks and import the networks by clicking "import" 
+    (see documentation for details)     
+
+
+* Start discovery
+
+   Discovery executes the following processes:
+
+   1 VLAN discovery via SNMP using Perl Modul SNMP::Info
+   2 Network discovery via SNMP querying routing tables from network devices
+   3 Host discovery of new found networks via SNMP using SNMP::Info and own discovery mechanisms
+   4 Host discovery of new found networks via DNS and ping
+
+   Click "import/export" -> "discovery" 
+
+   Introduce one or a coma separated list of IP addresses of devices holding routing tables (e.g.
+   routers or multilayer switches), introduce SNMP community string and click "discover".
+
+
+   NOTE
+   Networks which where imported by last run of "import networks from spreadsheet" can
+   be processed within host discovery, too.
+
+
+
+   HAVE FUN!
+
+
+=================================================
+GestioIP Copyright (C) Marc Uebel 2011 <contact@gestioip.net>
+
